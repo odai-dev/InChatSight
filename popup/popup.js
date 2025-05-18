@@ -14,7 +14,7 @@ async function getChatMessagesFromContentScript() {
 
 function formatChatForAI(chat) {
   return chat.map(message => {
-    if (!message.timestamp || !message.timestamp.includes(',')) {
+    if (!message.timestamp || typeof message.timestamp !== 'string' || !message.timestamp.includes(',')) {
       console.warn("Invalid or missing timestamp:", message);
       return `${message.author || 'Unknown'}: ${message.text || '[No text provided]'}`; // Fallback format
     }
@@ -44,59 +44,76 @@ function formatTime(timeStr) {
 }
 
 function getChatPartner(chat) {
-  // Extract unique authors from incoming messages
   const participants = new Set(
     chat
-      .filter(message => message.direction === 'incoming' && message.author) // Only incoming messages with valid authors
-      .map(message => message.author)
+      .filter(msg => msg.direction === 'incoming' && msg.author)
+      .map(msg => msg.author)
   );
 
-  // Return the chat partner(s) as a comma-separated string
-  return Array.from(participants).join(', ') || 'Unknown';
+  const names = Array.from(participants);
+  if (names.length === 0) return 'Unknown';
+  if (names.length === 1) return names[0];
+  return `Group Chat: ${names.join(', ')}`;
 }
+
+let currentChatPartner = null;
+
+let messages = [
+  {
+    role: "system",
+    content: `You are a socially intelligent AI assistant embedded in a chat interface. 
+Your role is to provide helpful insights, emotional analysis, or strategic guidance based on chat history.
+
+You can:
+- Summarize key points from the conversation.
+- Detect emotional tone, interest levels, or intentions.
+- Highlight any red flags, contradictions, or manipulation.
+- Offer advice, reflection, or third-person perspective on the situation.
+
+Only rely on the messages below. Always back your analysis with examples from the chat.
+
+Output should be empathetic, neutral, and thoughtful — like a good friend who’s also a therapist.`
+  }
+];
+
+let chatLogInjected = false;
 
 document.getElementById("analyzeBtn").addEventListener("click", async () => {
   const userQuestion = document.getElementById("userPrompt").value.trim();
   const responseBox = document.getElementById("responseBox");
   responseBox.classList.add("visible");
-  
 
   if (!userQuestion) return;
 
   responseBox.textContent = "Fetching chat messages... 📥";
 
-  
-
   try {
-    const chatHistory = await getChatMessagesFromContentScript();
-    
-    // Identify the chat partner
-    const chatPartner = getChatPartner(chatHistory);
-    console.log("Chat Partner:", chatPartner);
-    
-    const formattedChat = formatChatForAI(chatHistory);
-    
-    const messages = [
-      {
-        role: "system",
-        content: `You are a socially intelligent AI assistant embedded in a chat interface. 
-      Your role is to provide helpful insights, emotional analysis, or strategic guidance based on chat history.
+    if (!chatLogInjected) {
+      const chatHistory = await getChatMessagesFromContentScript();
+      const chatPartner = getChatPartner(chatHistory);
 
-      The user is currently chatting with: ${chatPartner}.
+      // Reset context if user switched chat
+      if (chatPartner !== currentChatPartner) {
+        currentChatPartner = chatPartner;
+        messages = [messages[0]]; // Keep only system prompt
+        chatLogInjected = false;
+      }
 
-      You can:
-      - Summarize key points from the conversation.
-      - Detect emotional tone, interest levels, or intentions.
-      - Highlight any red flags, contradictions, or manipulation.
-      - Offer advice, reflection, or third-person perspective on the situation.
+      const formattedChat = formatChatForAI(chatHistory);
+      const isGroupChat = currentChatPartner.startsWith("Group Chat:");
 
-      Only rely on the messages below. Always back your analysis with examples from the chat.
+      messages.push({
+        role: "assistant",
+        content: `You're chatting with: ${chatPartner}\n\nCHAT LOG:\n---\n${formattedChat}\n---`
+      });
 
-      Output should be empathetic, neutral, and thoughtful — like a good friend who’s also a therapist.`
-    },
-      { role: "assistant", content: `CHAT LOG:\n---\n${formattedChat}\n---` },
-      { role: "user", content: `USER INSTRUCTION:\n${userQuestion}` },
-    ];
+      chatLogInjected = true;
+    }
+
+    messages.push({
+      role: "user",
+      content: `USER INSTRUCTION:\n${userQuestion}`
+    });
 
     responseBox.textContent = "Analyzing... 🤔";
 
@@ -105,24 +122,34 @@ document.getElementById("analyzeBtn").addEventListener("click", async () => {
       headers: {
         Authorization: `Bearer ${OPENROUTER_API_KEY}`,
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://inchatsight.vercel.app", // fake for now
+        "HTTP-Referer": "https://inchatsight.vercel.app",
         "X-Title": "InChatSight Extension",
       },
       body: JSON.stringify({
         model: "meta-llama/llama-3.3-8b-instruct:free",
-        max_tokens: 2000,
+        max_tokens: 10000,
         temperature: 0.7,
         messages: messages,
       }),
     });
 
     const data = await res.json();
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    }
 
     if (data.choices && data.choices.length > 0 && data.choices[0].message) {
-      responseBox.textContent = data.choices[0].message.content.trim();
+      const aiResponse = data.choices[0].message.content.trim();
+      responseBox.textContent = aiResponse;
+
+      messages.push({
+        role: "assistant",
+        content: aiResponse
+      });
     } else {
       responseBox.textContent = "No valid response received 😕";
     }
+
   } catch (err) {
     responseBox.textContent = "Error: " + err.message;
   }
