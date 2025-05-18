@@ -79,7 +79,144 @@ Holds sensitive or configuration-specific variables like the API key (`OPENROUTE
 We chose to integrate OpenRouter rather than OpenAI’s direct endpoint to take advantage of a broader selection of models, usage-based pricing, and easier key management. This also opens the door for future LLM swapping or hybrid models.
 
 ### Fetching live chat data from content script
-Instead of statically hardcoding conversations (like in early prototypes), we decided to dynamically fetch real conversations from the page DOM using content scripts. This required diving into the structure of WhatsApp’s HTML and using appropriate selectors—however, it significantly improved realism and made the tool actually useful.
+ fetch real conversations from the page DOM using content scripts. This required diving into the structure of website HTML and using appropriate selectors:
+ the process for idtindfing and invistgiting the DOM was hard and done manully but it was worth here is an example of instgram DOM:
+
+ <div data-virtualized="false">
+    <div>
+        <div>
+            <div style="opacity: 1;">
+                <div role="row">
+                    <div>
+                        <div data-release-focus-from="CLICK" data-scop="messages_table" role="gridcell" tabindex="-1">
+                            <span>//The sender name</span>
+                            <div>
+                                <div></div>
+                                <div>
+                                    <div role="button" aria-label="Double tab to like" tabindex="0">
+                                        <div>
+                                            <div role="presentation">
+                                                <div>
+                                                    <div>
+                                                        <div role="none">
+                                                            <div>
+                                                                <div role="presentation">
+                                                                    <span dir="auto">
+                                                                        <div dir="auto">//The message</div>
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+A code snippest to collect the messages, senders in an array and diplay them on console using console.log:
+
+(() => {
+  const containers = document.querySelectorAll('div[data-release-focus-from][role="gridcell"]');
+  const msgs = [];
+
+  containers.forEach(container => {
+    const sender = container.querySelector('span')?.innerText?.trim();
+    const message = container.querySelector('span[dir="auto"] > div[dir="auto"]')?.innerText?.trim();
+
+    if (!message || !rawSender) return;
+
+    // Normalize sender
+    let direction = 'incoming';
+  
+
+    if (/you sent/i.test(sender)) {
+      direction = 'outgoing';
+      sender = 'You';
+    } else if (/replied/i.test(sender)) {
+      direction = 'reply';
+    }
+
+    msgs.push({ direction, sender, message });
+  });
+
+  console.log(msgs);
+  return msgs;
+})();
+
+
+
+An example of whatsapp DOM :
+
+<div tabindex="-1" class="" role="row">
+	<div tabindex="-1" class="_amjv _aotl || random" data-id="//random">
+		<div class="message-out focusable-list-item //other classes" aria-label="/The message/ /time/ /pm or am/ /status/">
+			<span class=""></span>
+			<div class="_amk4 false _amkd _amk5">
+				<span aria-hidden="true" data-icon="tail-out" class="_amk7"></span>
+				<div class="_amk6 _amlo">
+					<span aria-label="You:"></span>
+					<div>
+						<div>
+							<div class="_akbu">
+								<span dir="ltr" class="_ao3e selectable-text copyable-text" style="min-height: 0px;">
+                                </span>
+								<span class="">//THE MESSAGE</span>
+								<span class=""></span>
+								<span class="">/time/ /pm or am/</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+            		
+A code snippest to collect the text, author, direction, timestamp  in an array and diplay them on console using console.log:
+
+
+(() => {
+  const rows = document.querySelectorAll('div[role="row"]');
+  const msgs = [];
+
+  rows.forEach(row => {
+    // each row has a child with data-id
+    const container = row.querySelector('[data-id]');
+    if (!container) return;
+
+    // direction
+    const isOut = !!container.querySelector('.message-out');
+    const direction = isOut ? 'outgoing' : 'incoming';
+
+    // the text node
+    const textSpan = container.querySelector('span.selectable-text.copyable-text');
+    const text = textSpan?.innerText || '';
+
+
+    const pre = container.querySelector('.copyable-text')?.getAttribute('data-pre-plain-text') || '';
+    const match = pre.match(/^\[(.+?)\]\s*(.*?):\s*$/);
+    const timestamp = match ? match[1] : '';
+    const author    = match ? match[2] : (isOut ? 'You' : '');
+
+    msgs.push({ direction, author, timestamp, text });
+  });
+
+  console.log(msgs);
+  return msgs;
+})();
+
+
+
 
 ### System message + chat formatting
 Rather than just sending raw chat text to the API, we use a “system prompt” to inform the AI of its role and expectations. This gives it better context and yields more accurate, focused responses. Each chat message is formatted as a role-based entry to preserve tone and order.
