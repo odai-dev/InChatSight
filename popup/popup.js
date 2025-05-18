@@ -58,22 +58,24 @@ function getChatPartner(chat) {
 document.getElementById("analyzeBtn").addEventListener("click", async () => {
   const userQuestion = document.getElementById("userPrompt").value.trim();
   const responseBox = document.getElementById("responseBox");
+  responseBox.classList.add("visible");
+  
 
   if (!userQuestion) return;
 
   responseBox.textContent = "Fetching chat messages... 📥";
 
+  
+
   try {
     const chatHistory = await getChatMessagesFromContentScript();
-
+    
     // Identify the chat partner
     const chatPartner = getChatPartner(chatHistory);
     console.log("Chat Partner:", chatPartner);
-
+    
     const formattedChat = formatChatForAI(chatHistory);
-
-    console.log(formattedChat);
-
+    
     const messages = [
       {
         role: "system",
@@ -103,11 +105,11 @@ document.getElementById("analyzeBtn").addEventListener("click", async () => {
       headers: {
         Authorization: `Bearer ${OPENROUTER_API_KEY}`,
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://inchat.vercel.app", // fake for now
+        "HTTP-Referer": "https://inchatsight.vercel.app", // fake for now
         "X-Title": "InChatSight Extension",
       },
       body: JSON.stringify({
-        model: "openai/gpt-4.1",
+        model: "meta-llama/llama-3.3-8b-instruct:free",
         max_tokens: 2000,
         temperature: 0.7,
         messages: messages,
