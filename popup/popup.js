@@ -1,3 +1,47 @@
+// Custom dropdown
+document.addEventListener('DOMContentLoaded', () => {
+  const customSelect = document.querySelector('.custom-select');
+  const selectedOption = customSelect.querySelector('.selected-option');
+  const optionsContainer = customSelect.querySelector('.options-container');
+  const options = customSelect.querySelectorAll('.option');
+
+  // Toggle dropdown
+  selectedOption.addEventListener('click', () => {
+    customSelect.classList.toggle('open');
+  });
+
+  // Select an option and close
+  options.forEach(option => {
+    option.addEventListener('click', () => {
+      selectedOption.textContent = option.textContent;
+      customSelect.classList.remove('open');
+      console.log("Selected model:", option.textContent); // Add logic here if needed
+    });
+  });
+
+  // Close if clicked outside
+  document.addEventListener('click', (e) => {
+    if (!customSelect.contains(e.target)) {
+      customSelect.classList.remove('open');
+    }
+  });
+});
+
+
+// 
+let OPENROUTER_API_KEY = null;
+
+chrome.storage.local.get("apiKey", (data) => {
+    OPENROUTER_API_KEY = data.apiKey; // Ensure 'apiKey' matches the key used in setup.js
+    if (!OPENROUTER_API_KEY) {
+        chrome.runtime.openOptionsPage();
+    }
+});
+
+let selectedElement = document.querySelector(".selected-option");
+let aiModel = (selectedElement?.textContent.trim() === "Select a model") ? "google/gemini-2.0-flash-001" : selectedElement.textContent.trim();
+
+
 async function getChatMessagesFromContentScript() {
   return new Promise((resolve, reject) => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -8,6 +52,15 @@ async function getChatMessagesFromContentScript() {
         }
         resolve(response?.messages || []);
       });
+    });
+  });
+}
+
+async function getCurrentTabUrl() {
+  return new Promise((resolve, reject) => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (!tabs[0]?.url) return reject("No active tab URL found");
+      resolve(tabs[0].url);
     });
   });
 }
@@ -61,96 +114,115 @@ let currentChatPartner = null;
 let messages = [
   {
     role: "system",
-    content: `You are a socially intelligent AI assistant embedded in a chat interface. 
-Your role is to provide helpful insights, emotional analysis, or strategic guidance based on chat history.
-
+    content: `You are a socially intelligent AI assistant embedded in a chat interface.
+Your role is to provide helpful insights, emotional analysis, or strategic guidance based on chat
 You can:
 - Summarize key points from the conversation.
 - Detect emotional tone, interest levels, or intentions.
 - Highlight any red flags, contradictions, or manipulation.
 - Offer advice, reflection, or third-person perspective on the situation.
-
-Only rely on the messages below. Always back your analysis with examples from the chat.
-
-Output should be empathetic, neutral, and thoughtful — like a good friend who’s also a therapist.`
+- respond with the language that user sent his latest message with to you with eg: English, arabic etc.. .
+- format, orgnize and style your respone with new lines . 
+Only rely on the messages below. Always back your analysis with examples from the chat if it was provided.
+Output should be empathetic, neutral, and thoughtful — like a good friend who's also a therapist.`
   }
 ];
 
-let chatLogInjected = false;
+const chatWindow = document.getElementById("chatWindow");
+const userPrompt = document.getElementById("userPrompt");
+const sendBtn = document.getElementById("sendBtn");
 
-document.getElementById("analyzeBtn").addEventListener("click", async () => {
-  const userQuestion = document.getElementById("userPrompt").value.trim();
-  const responseBox = document.getElementById("responseBox");
-  responseBox.classList.add("visible");
+function appendMessage(role, content) {
+  const messageDiv = document.createElement("div");
+  messageDiv.className = `chat-message ${role}`;
 
-  if (!userQuestion) return;
+  const bubble = document.createElement("div");  // <---- Make sure to declare this!
+  bubble.className = `chat-bubble ${role}`;
 
-  responseBox.textContent = "Fetching chat messages... 📥";
+  // Detect direction (RTL or LTR)
+  const rtl = /[\u0600-\u06FF]/.test(content);
+  bubble.setAttribute("dir", rtl ? "rtl" : "ltr");
 
-  try {
-    if (!chatLogInjected) {
-      const chatHistory = await getChatMessagesFromContentScript();
-      const chatPartner = getChatPartner(chatHistory);
+  // Use marked to parse markdown for AI messages only
+  if (role === "ai") {
+    bubble.innerHTML = marked.parse(content);
+  } else {
+    // For user messages or others, preserve line breaks as plain text
+    bubble.innerHTML = content.replace(/\n/g, "<br>");
+  }
 
-      // Reset context if user switched chat
-      if (chatPartner !== currentChatPartner) {
-        currentChatPartner = chatPartner;
-        messages = [messages[0]]; // Keep only system prompt
-        chatLogInjected = false;
-      }
+  messageDiv.appendChild(bubble);
+  chatWindow.appendChild(messageDiv);
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+}
 
-      const formattedChat = formatChatForAI(chatHistory);
-      const isGroupChat = currentChatPartner.startsWith("Group Chat:");
 
-      messages.push({
-        role: "assistant",
-        content: `You're chatting with: ${chatPartner}\n\nCHAT LOG:\n---\n${formattedChat}\n---`
-      });
+async function handleUserMessage(userMessage) {
+  const supportedPlatforms = ["whatsapp.com", "instagram.com", "telegram.org", "messenger.com"];
+  const currentUrl = await getCurrentTabUrl();
+  const isOnSupportedPlatform = supportedPlatforms.some((platform) => currentUrl.includes(platform));
 
-      chatLogInjected = true;
+  if (userMessage.toLowerCase().includes("chat") || userMessage.toLowerCase().includes("messages")) {
+    if (!isOnSupportedPlatform) {
+      appendMessage("ai", "I can only access chat messages on WhatsApp, Instagram, Telegram, or Messenger. Please navigate to one of these platforms.");
+      return;
     }
 
-    messages.push({
-      role: "user",
-      content: `USER INSTRUCTION:\n${userQuestion}`
-    });
 
-    responseBox.textContent = "Analyzing... 🤔";
+    try {
+      const chatMessages = await getChatMessagesFromContentScript();
+      if (chatMessages.length === 0) {
+        appendMessage("ai", "I couldn't retrieve any chat messages. If you're on the correct platform, please refresh the page and try again.");
+        return;
+      }
 
+      const formattedChat = formatChatForAI(chatMessages);
+      messages.push({
+        role: "system",
+        content: `Here is the chat history:\n${formattedChat}`
+      });
+    } catch (error) {
+      appendMessage("ai", "I couldn't retrieve chat messages. Please refresh the page and try again.");
+      return;
+    }
+  }
+
+  // Normal AI behavior
+  messages.push({ role: "user", content: userMessage });
+  appendMessage("ai", "Typing...");
+  
+  try {
     const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://inchatsight.vercel.app",
-        "X-Title": "InChatSight Extension",
+        Authorization: `Bearer ${OPENROUTER_API_KEY}`, // Use the retrieved API key
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "meta-llama/llama-3.3-8b-instruct:free",
-        max_tokens: 10000,
+        model: `${aiModel}`,
+        max_tokens: 1000,
         temperature: 0.7,
-        messages: messages,
-      }),
+        messages: messages
+      })
     });
 
+    
     const data = await res.json();
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-    }
+    const aiResponse = data.choices[0]?.message?.content.trim() || "No response.";
+    appendMessage("ai", aiResponse);
 
-    if (data.choices && data.choices.length > 0 && data.choices[0].message) {
-      const aiResponse = data.choices[0].message.content.trim();
-      responseBox.textContent = aiResponse;
-
-      messages.push({
-        role: "assistant",
-        content: aiResponse
-      });
-    } else {
-      responseBox.textContent = "No valid response received 😕";
-    }
-
+    messages.push({ role: "assistant", content: aiResponse });
   } catch (err) {
-    responseBox.textContent = "Error: " + err.message;
+    appendMessage("ai", "Error: Unable to fetch response.");
   }
+}
+
+sendBtn.addEventListener("click", async () => {
+  const userMessage = userPrompt.value.trim();
+  if (!userMessage) return;
+
+  appendMessage("user", userMessage);
+  userPrompt.value = "";
+
+  await handleUserMessage(userMessage);
 });

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Setup API Key</title>
+  <style>
+    :root {
+      --primary: #5a5df0;
+      /* Gradient mid-tone: blue-purple */
+      --primary-dark: #3c40d0;
+      /* Darker version for hover/active */
+      --accent: #0fd9d9;
+      /* Teal/cyan accent */
+      --bg: #0f111a;
+      /* Deep navy background */
+      --text: #e5e7eb;
+      /* Light text */
+      --subtext: #9ca3af;
+      /* Muted text */
+      --card-bg: #1a1c2c;
+      /* Card background */
+    }
+
+    body {
+      background: var(--bg);
+      color: #e0e0e0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h2 {
+      margin-bottom: 1rem;
+      font-weight: 600;
+      color: var(--accent);
+      text-align: center;
+    }
+
+    input[type="password"] {
+      width: 100%;
+      max-width: 320px;
+      padding: 12px 16px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+      box-sizing: border-box;
+      background-color: var(--card-bg);
+      color: var(--subtext);
+      outline-offset: 2px;
+      outline-color: var(--accent);
+      transition: background-color 0.3s ease;
+    }
+
+    input[type="password"]:focus {
+      background-color: var(--card-bg);
+      outline-color: var(--accent);
+    }
+
+    button {
+      width: 100%;
+      max-width: 320px;
+      padding: 12px 16px;
+      font-size: 1.1rem;
+      background-color: var(--primary);
+      border: none;
+      border-radius: 6px;
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 600;
+      box-shadow: 0 4px 6px rgba(0, 188, 212, 0.4);
+      transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    button:hover {
+      background-color: var(--primary-dark);
+      box-shadow: 0 6px 10px rgba(0, 151, 167, 0.6);
+    }
+
+    #status {
+      margin-top: 1rem;
+      font-size: 1rem;
+      min-height: 1.2em;
+      text-align: center;
+      color: var(--text);
+    }
+
+    a {
+      color: var(--accent);
+    }
+  </style>
+</head>
+
+<body>
+  <h2>Enter your Open Router AI API Key</h2>
+  <input type="password" id="apiKeyInput" placeholder="Enter your API key" autocomplete="off" />
+  <button id="saveBtn">Save</button>
+  <p>You can get OpenRouter api key from her <a href="https://openrouter.ai/settings/keys"
+      target="_blank">OpenRouter</a></p>
+  <p id="status"></p>
+
+  <script src="setup.js"></script>
+</body>
+
+</html>
