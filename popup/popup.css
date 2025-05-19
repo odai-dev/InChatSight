@@ -60,11 +60,24 @@ body {
   align-items: flex-end;
 }
 
+.chat-bubble {
+  max-width: 90%;
+  padding: 10px;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.4;
+}
 .chat-bubble.ai {
   background-color: var(--card-bg);
   color: var(--text);
   border: 1px solid var(--border);
   animation: typingFadeIn 0.3s ease-in-out;
+}
+
+.chat-bubble.ai pre {
+  white-space: pre-wrap;  /* Allows wrapping while preserving formatting */
+  word-break: break-all;    /* Force breaks for long strings within pre */
+  overflow-x: auto;       /* Optionally add a horizontal scrollbar if content is still too wide */
 }
 
 .chat-bubble.ai a {
@@ -73,15 +86,6 @@ body {
 }
 
 
-
-
-.chat-bubble {
-  max-width: 80%;
-  padding: 10px;
-  border-radius: 10px;
-  font-size: 14px;
-  line-height: 1.4;
-}
 
 .chat-bubble.user {
   background-color: var(--primary);
@@ -94,6 +98,7 @@ body {
   color: var(--text);
   border: 1px solid var(--border);
   word-wrap: break-word;
+
 }
 .chat-bubble.user:hover,
 .chat-bubble.ai:hover {
