@@ -1,267 +1,284 @@
 :root {
-  --primary: #5a5df0;        /* Gradient mid-tone: blue-purple */
-  --primary-dark: #3c40d0;   /* Darker version for hover/active */
-  --accent: #0fd9d9;         /* Teal/cyan accent */
-  --bg: #0f111a;             /* Deep navy background */
-  --text: #e5e7eb;           /* Light text */
-  --subtext: #9ca3af;        /* Muted text */
-  --card-bg: #1a1c2c;        /* Card background */
-  --border: #2e3248;         /* Subtle border color */
-  --shadow: rgba(0, 0, 0, 0.4);
+	--primary: #5a5df0;
+	/* Gradient mid-tone: blue-purple */
+	--primary-dark: #3c40d0;
+	/* Darker version for hover/active */
+	--accent: #0fd9d9;
+	/* Teal/cyan accent */
+	--bg: #0f111a;
+	/* Deep navy background */
+	--text: #e5e7eb;
+	/* Light text */
+	--subtext: #9ca3af;
+	/* Muted text */
+	--card-bg: #1a1c2c;
+	/* Card background */
+	--border: #2e3248;
+	/* Subtle border color */
+	--shadow: rgba(0, 0, 0, 0.4);
 }
 
 body {
-  font-family: 'Inter', Arial, sans-serif;
-  margin: 0;
-  padding: 0;
-  background-color: var(--card-bg);
-  width: 350px;
-  height: 600px;
-  color: var(--text);
-  display: flex;
-  flex-direction: column;
+	font-family: "Inter", Arial, sans-serif;
+	margin: 0;
+	padding: 0;
+	background-color: var(--card-bg);
+	width: 350px;
+	height: 600px;
+	color: var(--text);
+	display: flex;
+	flex-direction: column;
 }
+
 .chat-container {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+	display: flex;
+	flex-direction: column;
+	height: 100%;
 }
 
 .logo {
-  align-self: center;
+	align-self: center;
 }
 
 .chat-window {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px;
-  background-color: var(--bg);
-  background-image: url(../icons/icon.png);
-  background-size: 100px;     
-  background-position: center; 
-  background-repeat: no-repeat;
-  border-bottom: 1px solid var(--border);
-  scroll-behavior: smooth;
-  scrollbar-width: none; /* For Firefox */
-  -ms-overflow-style: none; /* For Internet Explorer and Edge */
+	flex: 1;
+	overflow-y: auto;
+	padding: 20px;
+	background-color: var(--bg);
+	background-image: url(../icons/icon.png);
+	background-size: 100px;
+	background-position: center;
+	background-repeat: no-repeat;
+	border-bottom: 1px solid var(--border);
+	scroll-behavior: smooth;
+	scrollbar-width: none;
+	/* For Firefox */
+	-ms-overflow-style: none;
+	/* For Internet Explorer and Edge */
 }
 
 .chat-window::-webkit-scrollbar {
-  display: none; /* For Chrome, Safari, and Opera */
+	display: none;
+	/* For Chrome, Safari, and Opera */
 }
 
 .chat-message {
-  margin-bottom: 10px;
-  display: flex;
-  flex-direction: column;
+	margin-bottom: 10px;
+	display: flex;
+	flex-direction: column;
 }
 
 .chat-message.user {
-  align-items: flex-end;
+	align-items: flex-end;
 }
 
 .chat-bubble {
-  max-width: 90%;
-  padding: 10px;
-  border-radius: 10px;
-  font-size: 14px;
-  line-height: 1.4;
+	max-width: 90%;
+	padding: 10px;
+	border-radius: 10px;
+	font-size: 14px;
+	line-height: 1.4;
 }
+
 .chat-bubble.ai {
-  background-color: var(--card-bg);
-  color: var(--text);
-  border: 1px solid var(--border);
-  animation: typingFadeIn 0.3s ease-in-out;
+	background-color: var(--card-bg);
+	color: var(--text);
+	border: 1px solid var(--border);
+	animation: typingFadeIn 0.3s ease-in-out;
 }
 
 .chat-bubble.ai pre {
-  white-space: pre-wrap;  /* Allows wrapping while preserving formatting */
-  word-break: break-all;    /* Force breaks for long strings within pre */
-  overflow-x: auto;       /* Optionally add a horizontal scrollbar if content is still too wide */
+	white-space: pre-wrap;
+	/* Allows wrapping while preserving formatting */
+	word-break: break-all;
+	/* Force breaks for long strings within pre */
+	overflow-x: auto;
+	/* Optionally add a horizontal scrollbar if content is still too wide */
 }
 
 .chat-bubble.ai a {
-  color: var(--accent);
-  text-decoration: underline;
+	color: var(--accent);
+	text-decoration: underline;
 }
 
-
-
 .chat-bubble.user {
-  background-color: var(--primary);
-  color: white;
-  word-wrap: break-word;
+	background-color: var(--primary);
+	color: white;
+	word-wrap: break-word;
 }
 
 .chat-bubble.ai {
-  background-color: var(--card-bg);
-  color: var(--text);
-  border: 1px solid var(--border);
-  word-wrap: break-word;
-
+	background-color: var(--card-bg);
+	color: var(--text);
+	border: 1px solid var(--border);
+	word-wrap: break-word;
 }
+
 .chat-bubble.user:hover,
 .chat-bubble.ai:hover {
-  filter: brightness(1.1);
+	filter: brightness(1.1);
 }
 
-
 .chat-input-container {
-  display: flex;
-  padding: 10px;
-  background-color: var(--bg);
-  border-top: 1px solid var(--border);
+	display: flex;
+	padding: 10px;
+	background-color: var(--bg);
+	border-top: 1px solid var(--border);
+	height: 16vh;
+	align-items: center;
 }
 
 textarea {
-  flex: 1;
-  resize: none;
-  padding: 10px;
-  font-size: 14px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  outline: none;
-  background-color: #1e2133;
-  color: var(--text);
-  margin-right: 10px;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+	flex: 1;
+	resize: none;
+	padding: 10px;
+	font-size: 14px;
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	outline: none;
+	background-color: #1e2133;
+	color: var(--text);
+	margin-right: 10px;
+	transition: border-color 0.3s ease, box-shadow 0.3s ease;
+	height: 80%;
 }
 
 textarea:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 5px var(--accent);
+	border-color: var(--primary);
+	box-shadow: 0 0 5px var(--accent);
 }
 
 button {
-  background-color: var(--primary);
-  color: white;
-  border: none;
-  padding: 10px 15px;
-  cursor: pointer;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  transition: all 0.3s ease;
+	background-color: var(--primary);
+	color: white;
+	border: none;
+	padding: 10px 15px;
+	cursor: pointer;
+	border-radius: 8px;
+	font-size: 14px;
+	font-weight: 500;
+	transition: all 0.3s ease;
+	height: 50%;
 }
 
 button:hover {
-  background-color: var(--primary-dark);
+	background-color: var(--primary-dark);
 }
 
 .custom-select-wrapper {
-  position: relative;
-  width: 100%;
-  font-family: 'Inter', sans-serif;
+	position: relative;
+	width: 100%;
+	font-family: "Inter", sans-serif;
 }
 
 .custom-select {
-  background-color: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  color: var(--text);
-  cursor: pointer;
-  padding: 10px;
-  position: relative;
+	background-color: var(--bg);
+	border: 1px solid var(--border);
+
+	color: var(--text);
+	cursor: pointer;
+	padding: 5px;
+	padding-left: 10px;
+	position: relative;
 }
 
 .selected-option::after {
-  content: '▼';
-  float: right;
-  color: var(--subtext);
+	content: "▼";
+	float: right;
+	color: var(--subtext);
 }
 
 .options-container {
-  display: none;
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  max-height: 120px; 
-  overflow-y: auto;
-  background-color: var(--bg);
-  border: 1px solid var(--border);
-  border-top: none;
-  border-radius: 0 0 8px 8px;
-  z-index: 1000;
-  transition: all 0.3s ease;
+	display: none;
+	position: absolute;
+	top: 100%;
+	left: 0;
+	right: 0;
+	max-height: 100px;
+	overflow-y: auto;
+	background-color: var(--bg);
+	border: 1px solid var(--border);
+	border-top: none;
+	border-radius: 0 0 8px 8px;
+	z-index: 1000;
+	transition: all 0.3s ease;
 }
+
 .options-container::-webkit-scrollbar {
-  width: 8px;
+	width: 8px;
 }
 
 .options-container::-webkit-scrollbar-thumb {
-  background-color: var(--border);
-  border-radius: 4px;
+	background-color: var(--border);
+	border-radius: 4px;
 }
 
-
 .option {
-  padding: 10px;
-  border-bottom: 1px solid var(--border);
+	padding: 10px;
+	border-bottom: 1px solid var(--border);
 }
 
 .option:hover {
-  background-color: var(--card-bg);
-   cursor: pointer;
+	background-color: var(--card-bg);
+	cursor: pointer;
 }
 
 .custom-select.open .options-container {
-  display: block;
+	display: block;
 }
 
-
-
-
-
-/* Add this to your popup.css */
-
 .dots-container {
-  display: flex;
-  align-items: center; /* Vertically align dots if bubble has extra space */
-  /* The bubble's padding will provide space around the dots */
+	display: flex;
+	align-items: center;
 }
 
 .dots-container span {
-  display: inline-block;
-  width: 8px; /* Size of each dot */
-  height: 8px; /* Size of each dot */
-  margin: 0 2px; /* Space between dots */
-  background-color: var(--subtext); /* Use your subtext color for the dots */
-  border-radius: 50%; /* Make them circular */
-  animation: pulseDots 1.4s infinite ease-in-out both;
+	display: inline-block;
+	width: 10px;
+	/* Size of each dot */
+	height: 10px;
+	/* Size of each dot */
+	margin: 0 2px;
+	background-color: var(--subtext);
+	border-radius: 50%;
+	animation: pulseDots 1.4s infinite ease-in-out both;
 }
 
 /* Animation delays for each dot to create the sequential effect */
 .dots-container span:nth-child(1) {
-  animation-delay: -0.32s;
+	animation-delay: -0.32s;
 }
 
 .dots-container span:nth-child(2) {
-  animation-delay: -0.16s;
+	animation-delay: -0.16s;
 }
 
 /* The third dot (nth-child(3)) will have no animation-delay as per the 'both' fill mode */
 
 @keyframes pulseDots {
-  0%, 80%, 100% {
-    transform: scale(0); /* Dot is small/invisible */
-    opacity: 0;
-  }
-  40% {
-    transform: scale(1.0); /* Dot is full size */
-    opacity: 1;
-  }
+	0%,
+	80%,
+	100% {
+		transform: scale(0);
+		/* Dot is small/invisible */
+		opacity: 0;
+	}
+
+	40% {
+		transform: scale(1);
+		/* Dot is full size */
+		opacity: 1;
+	}
 }
 
-/* Ensure the typing indicator bubble itself aligns content as expected.
-   Often, chat bubbles are display:flex or inline-flex for their children already.
-   If the dots don't appear centered or well-placed within the bubble,
-   you might need to adjust the .chat-bubble.ai.typing-indicator if it's
-   overriding default flex behaviors for its direct children.
-   However, with the .dots-container, this should generally work well.
-*/
-
 @keyframes typingFadeIn {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
+	from {
+		opacity: 0;
+		transform: translateY(5px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
 }
