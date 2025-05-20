@@ -58,8 +58,11 @@ InChatSight is a Chrome browser extension designed to enhance your online chat e
 4.  **Select AI Model:** Use the dropdown menu (styled as "Select AI model") at the top of the popup to choose a different AI model for your conversation. The list includes various models from OpenAI, Google, Meta, DeepSeek, and Anthropic.
 5.  **Reset Chat:** Click the "Reset Chat" button located next to the model selector to clear the current conversation history with the AI in the popup.
 
+---
 
-## Project Structure and File Explanations
+## 📁 Project Structure and File Explanations
+
+```
 
 InChatSight/
 ├── README.md # This documentation file
@@ -80,6 +83,11 @@ InChatSight/
 └── setup/
 ├── setup.html # HTML for the API key input page
 └── setup.js # JavaScript logic for saving and loading the API key
+
+````
+
+---
+
 
 *   **`manifest.json`**:
     *   Defines the extension's name ("InChatSight"), version, description, and icons.
