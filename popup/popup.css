@@ -165,21 +165,25 @@ button:hover {
 	background-color: var(--primary-dark);
 }
 
-.custom-select-wrapper {
-	position: relative;
-	width: 100%;
-	font-family: "Inter", sans-serif;
-}
-
+#resetBtn {
+	height: auto;
+	font-size: 10px;
+} 
 .custom-select {
 	background-color: var(--bg);
 	border: 1px solid var(--border);
-
+	display: flex;
+	justify-content: space-between;
 	color: var(--text);
 	cursor: pointer;
 	padding: 5px;
 	padding-left: 10px;
 	position: relative;
+}
+.selected-option {
+	padding: 10px;
+	border-radius: 5px;
+	background-color: var(--card-bg);
 }
 
 .selected-option::after {
