@@ -1,5 +1,3 @@
-// popup.js
-
 // Global variable for messages, will be populated from storage or initialized
 let messages = [];
 let OPENROUTER_API_KEY = null;
@@ -16,8 +14,8 @@ const optionsContainer = customSelect?.querySelector(".options-container");
 const options = customSelect?.querySelectorAll(".option");
 
 // --- Storage Keys ---
-const STORAGE_KEY_CHAT_MESSAGES = "chatGPTContextMessages";
-const STORAGE_KEY_SELECTED_MODEL = "chatGPTSelectedModel";
+const STORAGE_KEY_CHAT_MESSAGES = "AIContextMessages";
+const STORAGE_KEY_SELECTED_MODEL = "AISelectedModel";
 
 // --- State Management Functions ---
 async function saveState() {
@@ -316,7 +314,7 @@ function appendMessage(role, content) {
 	} else {
 		const isRtl = /[\u0600-\u06FF]/.test(content); // Basic RTL detection
 		bubble.setAttribute("dir", isRtl ? "rtl" : "ltr");
-		if (role === "ai") { // This will now correctly handle all AI/system messages
+		if (role === "ai") { // This will correctly handle all AI/system messages
             if (typeof marked !== 'undefined') {
 			    bubble.innerHTML = marked.parse(content);
             } else {
@@ -363,21 +361,7 @@ async function handleUserMessage(userMessageText) {
 
 	const isOnSupportedPlatform = supportedPlatforms.some(platform => currentUrl.includes(platform));
     console.log("[handleUserMessage] Is on supported platform?", isOnSupportedPlatform);
-
-    // Ensure a system prompt exists in `messages` (persisted history)
-    // This should be the *main* system prompt, not the page context.
-    if (messages.length === 0 || messages.find(m => m.role === "system" && (m.content.trim() === chatAnalyzerSystemPrompt.trim() || m.content.trim() === defaultSystemPrompt.trim())) === undefined) {
-        // If no system prompt, or the first message isn't THE system prompt, prepend one.
-        // Clear any other leading non-system messages if messages[0] is not the right system prompt.
-        messages = messages.filter(m => m.role === "user" || m.role === "ai" || (m.role === "system" && (m.content.trim() === chatAnalyzerSystemPrompt.trim() || m.content.trim() === defaultSystemPrompt.trim())));
-
-        const systemPromptContent = isOnSupportedPlatform ? chatAnalyzerSystemPrompt : defaultSystemPrompt;
-        messages.unshift({ role: "system", content: systemPromptContent });
-        console.log("[handleUserMessage] Ensured/Prepended main system prompt:", isOnSupportedPlatform ? "Chat Analyzer Mode" : "Default AI Assistant Mode");
-        await saveState(); // Save if we modified messages
-    }
-
-
+	
 	if (isOnSupportedPlatform && !chatContextAttemptedForThisSession) {
 		appendMessage("ai", "Accessing chat messages from the current page...");
         let typingBubbleForContext = chatWindow.querySelector(".chat-bubble.ai.typing-indicator");
