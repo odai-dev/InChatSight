@@ -1,245 +1,172 @@
-# InChatSight 🔍🤖
+# InChatSight: AI-Powered Chat Companion
 
-**InChatSight** is a Chrome extension designed to revolutionize how you interact with your online chats. By integrating an AI assistant directly into popular messaging platforms like WhatsApp, Messenger, and Instagram, InChatSight allows users to ask deep, analytical questions about their conversations and receive helpful, insightful responses in real time.
+#### Video Demo: <>
+#### Description:
 
-Whether you're trying to interpret someone's tone, detect emotional subtext, or gain perspective on a confusing exchange, InChatSight serves as your personal AI-powered conversation analyst—right inside your browser.
+InChatSight is a Chrome browser extension designed to enhance your online chat experiences by integrating an intelligent AI assistant. Currently, it excels at interacting with WhatsApp Web, where it can access the current conversation (with user initiation via the popup) to provide valuable insights, summaries, emotional tone analysis, or even strategic communication advice. Support for other popular platforms like Facebook Messenger, Instagram, and Telegram is planned for future development. The extension allows users to interact with a powerful AI model (configurable via OpenRouter API) that uses the context of the ongoing chat to offer relevant and helpful responses. Even when not on a supported chat platform, or when full context-extraction for other platforms is pending, InChatSight functions as a general-purpose AI chatbot within its popup interface, remembering your conversation history across sessions. The goal is to provide users with a "second brain" or an insightful friend who can offer a different perspective on their digital interactions, helping them communicate more effectively and understand conversations better.
 
----
+## Technologies Used
 
-## 🚀 What the Extension Does
+*   **JavaScript (ES6+):** Core logic for the extension, including DOM manipulation, API interactions, and event handling.
+*   **HTML5 & CSS3:** Structure and styling for the extension's popup interface and setup page.
+*   **Chrome Extension APIs:**
+    *   `chrome.storage.local`: For persisting the user's API key and chat history.
+    *   `chrome.tabs`: For managing the setup page and interacting with the active tab.
+    *   `chrome.runtime`: For inter-script communication (popup to content script) and handling installation events.
+    *   `chrome.action`: For defining the browser action (popup).
+*   **OpenRouter API:** Used to access various large language models for the AI's conversational capabilities. Users provide their own OpenRouter API key.
+*   **Marked.js:** A JavaScript library used to parse and render Markdown in the AI's responses, allowing for richer text formatting.
 
-The core functionality of InChatSight is to inject an intelligent assistant into chat interfaces. The assistant can read recent chat messages and respond to user questions like:
-- “What is the emotional tone of this conversation?”
-- “Does the other person seem interested or distant?”
-- “Is there any contradiction in what they’re saying?”
-- “What can I infer from the way they’re replying?”
+## Features
 
-The assistant leverages large language models (via the OpenRouter API) to understand context and extract nuanced insights from the chat. The user can ask questions directly through the popup UI, and get rich answers that help them interpret the conversation with clarity and objectivity.
+*   **Contextual Chat Analysis (WhatsApp Web):** On WhatsApp Web, the extension can fetch the current chat messages to provide context-aware AI insights. Support for comprehensive message extraction on Facebook Messenger, Instagram, and Telegram is a planned future enhancement.
+*   **AI Chatbot Interface:** A clean, modern, and interactive popup window with a dark theme for conversing with the AI.
+*   **Persistent Chat History:** Conversations with the AI within the popup are saved locally and restored across sessions.
+*   **OpenRouter API Key Setup:** A dedicated setup page with a clear interface guides users to input their OpenRouter API key on first installation.
+*   **Model Selection:** Users can choose their preferred AI model from a custom-styled dropdown list in the popup (models sourced from OpenRouter).
+*   **Dynamic System Prompts:** The AI's underlying instructions (system prompt) change based on whether it has access to page chat context, tailoring its responses.
+*   **Session-Specific Page Context:** Chat context grabbed from WhatsApp Web is used for the current popup session to inform the AI but is not permanently stored in the AI's chat log.
+*   **Markdown Rendering:** AI responses are rendered with Markdown support for better readability (e.g., lists, bolding, links).
+*   **"Typing..." Indicator:** Provides animated visual feedback while the AI is processing a response.
+*   **Reset Chat Functionality:** Allows users to clear the current conversation history with the AI.
+*   **Automatic Setup Page:** Opens the API key setup page upon first installation.
 
----
+## Setup and Installation
 
-## 📁 Project Structure Overview
+1.  **Download/Clone the Repository:**
+    *   Obtain the extension files and place them in a local directory.
+2.  **Enable Developer Mode in Chrome:**
+    *   Open Chrome and navigate to `chrome://extensions`.
+    *   Toggle on "Developer mode" in the top right corner.
+3.  **Load Unpacked Extension:**
+    *   Click on "Load unpacked."
+    *   Select the directory where you saved the `InChatSight` extension files (the directory containing `manifest.json`).
+4.  **API Key Setup:**
+    *   Upon first installation, a setup page (`setup/setup.html`) should automatically open.
+    *   If it doesn't, you can usually access it via the extension's options (if configured, or by finding its URL in `chrome://extensions` details and opening it manually).
+    *   Enter your OpenRouter API key in the input field and click "Save." The tab will close automatically after saving. You can get an API key from [OpenRouter.ai](https://openrouter.ai/settings/keys).
 
-Here’s a breakdown of each file and what it contributes to the project:
+## How to Use
 
-### `manifest.json`
-This is the core configuration file for the Chrome extension. It declares metadata (name, version, permissions), defines which scripts run in which contexts (popup, content, background), and specifies the host permissions needed to access platforms like WhatsApp, Messenger, and Instagram.
+1.  **Open the Extension:** Click the InChatSight icon in your Chrome toolbar. This will open the popup interface.
+2.  **Chat with the AI:** Type your message in the textarea at the bottom of the popup and press Enter or click the "Send" button.
+3.  **Contextual Analysis (on supported platforms):**
+    *   Navigate to a chat on **WhatsApp Web**. For other platforms like Messenger, Instagram, or Telegram, the AI will currently function as a general chatbot without specific page message extraction, pending future updates.
+    *   Open the InChatSight popup.
+    *   **If on WhatsApp Web,** the extension will attempt to access the messages from the current page. It will notify you if it successfully loaded context or if there was an issue.
+    *   You can then ask the AI questions about the conversation, request summaries, analyze tone, etc. The AI will use the fetched chat as context.
+4.  **Select AI Model:** Use the dropdown menu (styled as "Select AI model") at the top of the popup to choose a different AI model for your conversation. The list includes various models from OpenAI, Google, Meta, DeepSeek, and Anthropic.
+5.  **Reset Chat:** Click the "Reset Chat" button located next to the model selector to clear the current conversation history with the AI in the popup.
 
-Key configuration points:
-- `manifest_version`: 3 (required for modern Chrome extensions)
-- `permissions`: Includes `activeTab` and `scripting` to inject scripts and communicate with pages
-- `host_permissions`: Limits the extension to only run on specific domains
-- `content_scripts`: Injects `content.js` into matching pages to extract chat data
-- `background`: Declares a `background.js` service worker
-- `action`: Points to the popup interface (`popup.html`)
-
-### `background.js`
-Currently a placeholder. This file is intended for future scalability—possibly to handle long-running tasks, storage syncing, or listening to tab changes. While not actively used in the MVP, it provides a solid architecture for future updates.
-
-### `content.js`
-This script runs in the context of the chat platforms' web pages. It performs the crucial job of **scraping visible chat messages** from the DOM. For WhatsApp, for example, it uses role-based and class-based selectors to extract:
-- The direction of the message (incoming/outgoing)
-- Author name
-- Timestamp
-- Message content
-
-These messages are formatted and returned as structured data when the popup sends a request. The code is modular and built to allow similar logic to be added for other platforms like Instagram and Messenger.
-
-### `popup/`
-This directory contains all the UI and logic related to the popup interface of the extension—the user's main interaction point.
-
-#### `popup.html`
-Defines the layout and structure of the popup interface:
-- Title and description
-- A text box for user questions
-- A button to trigger analysis
-- A div for displaying the AI response
-
-#### `popup.css`
-Handles basic styling of the popup, keeping the UI clean and readable. Emphasis was placed on clarity and simplicity, keeping distractions minimal while maintaining a friendly tone.
-
-#### `popup.js`
-This file is the brains of the popup. It performs several key actions:
-1. Collects the user's question when they click "Analyze".
-2. Sends a message to `content.js` requesting recent chat history from the current tab.
-3. Formats that chat data into a structure understood by the OpenRouter API (ChatGPT-style).
-4. Sends a POST request to the AI API with the full conversation + user question.
-5. Displays the AI's response in the UI.
-
-It uses Chrome’s `runtime.sendMessage` and `tabs.query` to coordinate with the content script, and provides clear feedback to the user throughout.
-
-#### `config.js`
-Holds sensitive or configuration-specific variables like the API key (`OPENROUTER_API_KEY`). This file is separated out to make swapping keys easier and keep logic clean. For safety, this file should be ignored in public repositories (or use environment variable handling in production).
-
----
-
-## 🤔 Design Decisions & Rationale
-
-### Using OpenRouter over OpenAI
-We chose to integrate OpenRouter rather than OpenAI’s direct endpoint to take advantage of a broader selection of models, usage-based pricing, and easier key management. This also opens the door for future LLM swapping or hybrid models.
-
-### Fetching live chat data from content script
- fetch real conversations from the page DOM using content scripts. This required diving into the structure of website HTML and using appropriate selectors:
- the process for idtindfing and invistgiting the DOM was hard and done manully but it was worth here is an example of instgram DOM:
-
- <div data-virtualized="false">
-    <div>
-        <div>
-            <div style="opacity: 1;">
-                <div role="row">
-                    <div>
-                        <div data-release-focus-from="CLICK" data-scop="messages_table" role="gridcell" tabindex="-1">
-                            <span>//The sender name</span>
-                            <div>
-                                <div></div>
-                                <div>
-                                    <div role="button" aria-label="Double tab to like" tabindex="0">
-                                        <div>
-                                            <div role="presentation">
-                                                <div>
-                                                    <div>
-                                                        <div role="none">
-                                                            <div>
-                                                                <div role="presentation">
-                                                                    <span dir="auto">
-                                                                        <div dir="auto">//The message</div>
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+## Project Structure and File Explanations
 
 
-A code snippest to collect the messages, senders in an array and diplay them on console using console.log:
+InChatSight/
+├── README.md # This documentation file
+├── background.js # Service worker for background tasks
+├── content.js # Injects into web pages to grab chat data
+├── icons/ # Extension icons (icon.png used as chat background)
+│ ├── icon-16.png
+│ ├── icon-32.png
+│ ├── icon-48.png
+│ └── icon-128.png
+├── libs/
+│ └── marked.min.js # Markdown parsing library
+├── manifest.json # Core configuration file for the extension
+├── popup/
+│ ├── popup.css # Styles for the popup interface
+│ ├── popup.html # HTML structure for the popup
+│ └── popup.js # JavaScript logic for the popup interface
+└── setup/
+├── setup.html # HTML for the API key setup page
+└── setup.js # JavaScript logic for the setup page
 
-(() => {
-  const containers = document.querySelectorAll('div[data-release-focus-from][role="gridcell"]');
-  const msgs = [];
+*   **`manifest.json`**:
+    *   Defines the extension's name ("InChatSight"), version, description, and icons.
+    *   Specifies `manifest_version: 3`.
+    *   **Permissions**: `activeTab`, `scripting`, `storage`, `tabs`.
+    *   **Host Permissions**: `"*://*.whatsapp.com/*"`, `"*://*.messenger.com/*"`, `"*://*.instagram.com/*"`, `"*://*.telegram.org/*"`. Also includes `https://openrouter.ai/*` in content script matches, though its primary interaction with OpenRouter is via API calls from `popup.js`.
+    *   **Action**: Defines `popup/popup.html` as the default UI.
+    *   **Options Page**: Sets `setup/setup.html` as the options page.
+    *   **Background Script**: Registers `background.js` as the service worker.
+    *   **Content Scripts**: Declares `content.js` to be injected into matched URLs when the document is idle.
 
-  containers.forEach(container => {
-    const sender = container.querySelector('span')?.innerText?.trim();
-    const message = container.querySelector('span[dir="auto"] > div[dir="auto"]')?.innerText?.trim();
+*   **`background.js`**:
+    *   Handles the `chrome.runtime.onInstalled` event.
+    *   On first install, it opens `setup/setup.html` for API key entry.
 
-    if (!message || !rawSender) return;
+*   **`content.js`**:
+    *   Injected into supported chat platforms (WhatsApp, Messenger, Instagram, Telegram).
+    *   `grabWhatsAppMessages()`: **Currently implemented to parse WhatsApp Web's DOM.** It extracts message text, author, timestamp, and direction.
+        *   *Limitation*: Tightly coupled to WhatsApp's HTML. Parsers for other platforms are future work.
+    *   `chrome.runtime.onMessage.addListener()`: Listens for `action: "getChatMessages"` from `popup.js`, calls `grabWhatsAppMessages()`, and returns the data.
 
-    // Normalize sender
-    let direction = 'incoming';
-  
+*   **`libs/marked.min.js`**:
+    *   A third-party Markdown parsing library used in `popup.js` to render AI responses with rich formatting (lists, bolding, etc.).
 
-    if (/you sent/i.test(sender)) {
-      direction = 'outgoing';
-      sender = 'You';
-    } else if (/replied/i.test(sender)) {
-      direction = 'reply';
-    }
+*   **`popup/popup.html`**:
+    *   Defines the structure of the extension's main user interface.
+    *   Key elements include:
+        *   `<div id="chatWindow">`: The scrollable area where user and AI messages are displayed.
+        *   A custom dropdown (`<div class="custom-select">`) for AI model selection, listing various models from providers like OpenAI, Google, Meta, etc.
+        *   `<button id="resetBtn">`: Allows users to clear the chat history.
+        *   A chat input area (`<div class="chat-input-container">`) containing:
+            *   `<textarea id="userPrompt">`: For users to type their messages.
+            *   `<button id="sendBtn">`: To submit the message.
+    *   Includes `popup.css` for styling and `../libs/marked.min.js` and `popup.js` for functionality.
 
-    msgs.push({ direction, sender, message });
-  });
+*   **`popup/popup.css`**:
+    *   Provides the visual styling for `popup.html`, creating a modern, dark-themed chat interface.
+    *   Uses CSS custom properties (variables like `--primary`, `--bg`, `--text`) for a consistent theme.
+    *   Styles chat bubbles for user and AI messages, the input area, buttons, and the custom model selector dropdown.
+    *   Includes animations for the "typing..." indicator (`pulseDots`) and message appearance (`typingFadeIn`).
+    *   The chat window (`.chat-window`) has a subtle background image (`icons/icon.png`).
 
-  console.log(msgs);
-  return msgs;
-})();
+*   **`popup/popup.js`**:
+    *   The core JavaScript for the popup interface.
+    *   **State Management**: Manages `messages` (chat history), `OPENROUTER_API_KEY`, and session-specific flags for page context using `chrome.storage.local`.
+    *   **Initialization**: On `DOMContentLoaded`, loads API key, prior chat state, sets up the model selector, and attaches event listeners.
+    *   **`resetChat()`**: Clears chat history and UI.
+    *   **`getChatMessagesFromContentScript()`**: Communicates with `content.js` to fetch chat data from the active tab.
+    *   **`formatChatForAI()`**: Prepares scraped chat messages for the AI.
+    *   **System Prompts**: Defines `chatAnalyzerSystemPrompt` and `defaultSystemPrompt`.
+    *   **`appendMessage()`**: Dynamically adds messages to `chatWindow`, using `marked.parse()` for AI responses.
+    *   **`handleUserMessage()`**: Orchestrates fetching page context (if applicable), constructing the API request with system prompts and message history, calling the OpenRouter API, and displaying the AI's response.
 
+*   **`setup/setup.html`**:
+    *   The HTML page for users to enter their OpenRouter API key.
+    *   Consists of a title, an `<input type="password" id="apiKeyInput">` for the key, a `<button id="saveBtn">`, a link to OpenRouter's key settings page, and a `<p id="status">` for feedback messages.
+    *   Styling is primarily handled by an inline `<style>` block, featuring a dark theme consistent with the popup.
 
+*   **`setup/setup.js`**:
+    *   Provides the functionality for `setup.html`.
+    *   Adds an event listener to `saveBtn`. On click, it retrieves the API key from `apiKeyInput`, saves it to `chrome.storage.local`, displays a status message, and then closes the setup tab.
 
-An example of whatsapp DOM :
+## Design Choices and Rationale
 
-<div tabindex="-1" class="" role="row">
-	<div tabindex="-1" class="_amjv _aotl || random" data-id="//random">
-		<div class="message-out focusable-list-item //other classes" aria-label="/The message/ /time/ /pm or am/ /status/">
-			<span class=""></span>
-			<div class="_amk4 false _amkd _amk5">
-				<span aria-hidden="true" data-icon="tail-out" class="_amk7"></span>
-				<div class="_amk6 _amlo">
-					<span aria-label="You:"></span>
-					<div>
-						<div>
-							<div class="_akbu">
-								<span dir="ltr" class="_ao3e selectable-text copyable-text" style="min-height: 0px;">
-                                </span>
-								<span class="">//THE MESSAGE</span>
-								<span class=""></span>
-								<span class="">/time/ /pm or am/</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-            		
-A code snippest to collect the text, author, direction, timestamp  in an array and diplay them on console using console.log:
+*   **OpenRouter for Model Flexibility**: Allows users to choose from various AI models via their own API key, offloading API management to the user.
+*   **Session-Based Page Context**: Page-scraped chat context is temporary for the current session to keep the main AI conversation log clean.
+*   **Platform-Specific DOM Parsing (WhatsApp Focus)**: Current message extraction targets WhatsApp for accuracy, with plans to expand to other platforms. This approach is more reliable than generic scrapers but requires platform-specific code.
+*   **`chrome.storage.local` for Persistence**: Standard and secure method for storing API keys and chat history.
+*   **Client-Side API Key Handling**: Simplifies architecture by keeping the API key on the client, relying on user trust.
+*   **Asynchronous Operations (`async/await`)**: Ensures a responsive UI during API calls and storage operations.
+*   **User-Initiated Context Fetching**: Respects privacy by only fetching page chat data when the popup is opened on a supported site.
+*   **Clear User Feedback & UI**: The popup uses a dark theme, clear visual cues like "Typing...", and informative messages. The setup page is straightforward.
+*   **Markdown for AI Responses**: `marked.js` enhances AI response readability.
+*   **Custom CSS Theming**: Using CSS variables (`:root`) in `popup.css` and `setup.html` (inline styles) allows for easy theming and consistent design.
 
+## Challenges and Potential Future Work
 
-(() => {
-  const rows = document.querySelectorAll('div[role="row"]');
-  const msgs = [];
-
-  rows.forEach(row => {
-    // each row has a child with data-id
-    const container = row.querySelector('[data-id]');
-    if (!container) return;
-
-    // direction
-    const isOut = !!container.querySelector('.message-out');
-    const direction = isOut ? 'outgoing' : 'incoming';
-
-    // the text node
-    const textSpan = container.querySelector('span.selectable-text.copyable-text');
-    const text = textSpan?.innerText || '';
-
-
-    const pre = container.querySelector('.copyable-text')?.getAttribute('data-pre-plain-text') || '';
-    const match = pre.match(/^\[(.+?)\]\s*(.*?):\s*$/);
-    const timestamp = match ? match[1] : '';
-    const author    = match ? match[2] : (isOut ? 'You' : '');
-
-    msgs.push({ direction, author, timestamp, text });
-  });
-
-  console.log(msgs);
-  return msgs;
-})();
-
-
-
-
-### System message + chat formatting
-Rather than just sending raw chat text to the API, we use a “system prompt” to inform the AI of its role and expectations. This gives it better context and yields more accurate, focused responses. Each chat message is formatted as a role-based entry to preserve tone and order.
-
-### MVP Platform Scope
-In this version, WhatsApp is fully supported. The code was designed with scalability in mind—meaning it’s easy to add `grabMessengerMessages()` or `grabInstagramMessages()` functions to extend platform support. This modularity was a deliberate choice.
+*   **DOM Scraping Fragility**: The `grabWhatsAppMessages` function is vulnerable to WhatsApp UI changes. This will be a recurring challenge as support for other platforms is added.
+*   **Support for More Platforms**: A primary goal is to implement robust message extraction for Facebook Messenger, Instagram, and Telegram, requiring dedicated parsers.
+*   **Context Window Limitations**: Long chat histories might exceed AI model limits. Future work could involve summarization or more selective context.
+*   **Error Handling**: Enhancing resilience against API errors and content script issues.
+*   **Advanced AI Features**: User-customizable prompts, more specialized analysis tasks.
+*   **UI/UX Enhancements**: Options for editing/deleting messages, clearer indication of loaded context, improved accessibility.
+*   **Performance on Large Chats**: Optimizing the extraction and processing of extensive chat histories.
 
 ---
 
-## 🔮 Future Features & Improvements
+This was CS50x! 😊
 
-- Support for Messenger and Instagram DOM structures
-- AI summarization of entire chats
-- Sentiment heatmaps over time
-- Local caching of previous analyses
-- Auto-suggestions based on conversation patterns
-- Smarter error handling and feedback messages
-
----
-
-## 🙌 Final Thoughts
-
-InChatSight is a project born from the idea that we often overthink conversations and miss subtle signals. By combining real-time web scraping with powerful LLM analysis, we can bring users a second opinion—one that's clear-headed, objective, and smart.
-
-This README and the project as a whole aim to showcase real-world Chrome extension development, DOM interaction, message passing, and AI API integration. We hope this project inspires you to build creative tools that merge AI with everyday digital experiences.
-
+Note: this READEM.md file was written with the help of Gimini ai.

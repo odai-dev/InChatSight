@@ -1,13 +1,14 @@
 {
     "manifest_version": 3,
-    "name": "InChatSight",
+    "name": "InChatSight — AI-Powered Chat Companion",
     "version": "1.0",
     "description": "Injects an AI chatbot into web chat platforms to provide isnights on your converstion.",
     "permissions": ["activeTab", "scripting", "storage", "tabs"],
     "host_permissions": [
          "*://*.whatsapp.com/*",
         "*://*.messenger.com/*",
-        "*://*.instagram.com/*"
+        "*://*.instagram.com/*",
+        "*://*.telegram.org/*"
     ],
     "action": {
         "default_popup": "popup/popup.html"
@@ -28,7 +29,9 @@
                 "https://openrouter.ai/*",
                 "*://*.whatsapp.com/*",
                 "*://*.messenger.com/*",
-                "*://*.instagram.com/*"
+                "*://*.instagram.com/*",
+                "*://*.telegram.org/*"
+                
             ],
             "js": ["content.js"],
             "run_at": "document_idle"

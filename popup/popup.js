@@ -315,6 +315,7 @@ function appendMessage(role, content) {
 		const isRtl = /[\u0600-\u06FF]/.test(content); // Basic RTL detection
 		bubble.setAttribute("dir", isRtl ? "rtl" : "ltr");
 		if (role === "ai") { // This will correctly handle all AI/system messages
+			// Styling the ai respones with marked.min.js was made by the help of chatgpt
             if (typeof marked !== 'undefined') {
 			    bubble.innerHTML = marked.parse(content);
             } else {
@@ -361,7 +362,7 @@ async function handleUserMessage(userMessageText) {
 
 	const isOnSupportedPlatform = supportedPlatforms.some(platform => currentUrl.includes(platform));
     console.log("[handleUserMessage] Is on supported platform?", isOnSupportedPlatform);
-	
+
 	if (isOnSupportedPlatform && !chatContextAttemptedForThisSession) {
 		appendMessage("ai", "Accessing chat messages from the current page...");
         let typingBubbleForContext = chatWindow.querySelector(".chat-bubble.ai.typing-indicator");
