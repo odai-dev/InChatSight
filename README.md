@@ -58,28 +58,28 @@ InChatSight is a Chrome browser extension designed to enhance your online chat e
 4.  **Select AI Model:** Use the dropdown menu (styled as "Select AI model") at the top of the popup to choose a different AI model for your conversation. The list includes various models from OpenAI, Google, Meta, DeepSeek, and Anthropic.
 5.  **Reset Chat:** Click the "Reset Chat" button located next to the model selector to clear the current conversation history with the AI in the popup.
 
-## Project Structure and File Explanations
 
+## Project Structure and File Explanations
 
 InChatSight/
 ├── README.md # This documentation file
-├── background.js # Service worker for background tasks
-├── content.js # Injects into web pages to grab chat data
+├── background.js # Service worker that opens setup page on install
+├── content.js # Injected into web pages to extract chat messages
 ├── icons/ # Extension icons (icon.png used as chat background)
 │ ├── icon-16.png
 │ ├── icon-32.png
 │ ├── icon-48.png
 │ └── icon-128.png
 ├── libs/
-│ └── marked.min.js # Markdown parsing library
-├── manifest.json # Core configuration file for the extension
+│ └── marked.min.js # Markdown parsing library used in chat rendering
+├── manifest.json # Core configuration file for the Chrome extension
 ├── popup/
-│ ├── popup.css # Styles for the popup interface
-│ ├── popup.html # HTML structure for the popup
-│ └── popup.js # JavaScript logic for the popup interface
+│ ├── popup.css # Styles for the popup chat interface
+│ ├── popup.html # HTML structure for the popup UI
+│ └── popup.js # JavaScript logic for popup behavior and AI interaction
 └── setup/
-├── setup.html # HTML for the API key setup page
-└── setup.js # JavaScript logic for the setup page
+├── setup.html # HTML for the API key input page
+└── setup.js # JavaScript logic for saving and loading the API key
 
 *   **`manifest.json`**:
     *   Defines the extension's name ("InChatSight"), version, description, and icons.
