@@ -4,6 +4,7 @@
 let messages = [];
 let OPENROUTER_API_KEY = null;
 let chatContextAttemptedForThisSession = false; // Reset on each popup load
+let sessionFetchedPageContext = null; // << NEW: To store page context for the current session
 
 const chatWindow = document.getElementById("chatWindow");
 const userPrompt = document.getElementById("userPrompt");
@@ -25,7 +26,7 @@ async function saveState() {
         return;
     }
     const stateToSave = {
-        [STORAGE_KEY_CHAT_MESSAGES]: messages
+        [STORAGE_KEY_CHAT_MESSAGES]: messages // Only save the main chat history
     };
     if (selectedOption && selectedOption.textContent !== "Select AI model") {
         stateToSave[STORAGE_KEY_SELECTED_MODEL] = selectedOption.textContent;
@@ -39,36 +40,33 @@ async function saveState() {
 }
 
 async function loadState() {
+    // chatContextAttemptedForThisSession is reset by virtue of popup loading
+    // sessionFetchedPageContext is also reset by virtue of popup loading (as it's a 'let' at the top level)
     if (!chrome.storage || !chrome.storage.local) {
         console.warn("chrome.storage.local is not available. State cannot be loaded.");
-        return Promise.resolve(); // Resolve to avoid blocking further execution
+        return Promise.resolve();
     }
     return new Promise((resolve) => {
         chrome.storage.local.get([STORAGE_KEY_CHAT_MESSAGES, STORAGE_KEY_SELECTED_MODEL], (data) => {
             if (chrome.runtime.lastError) {
                 console.error("Error loading state:", chrome.runtime.lastError.message);
-                resolve(); // Resolve even on error to allow the rest of the popup to initialize
+                resolve();
                 return;
             }
-
             console.log("State loaded from storage:", data);
-
             if (data[STORAGE_KEY_CHAT_MESSAGES] && Array.isArray(data[STORAGE_KEY_CHAT_MESSAGES])) {
                 messages = data[STORAGE_KEY_CHAT_MESSAGES];
-                // Repopulate the chat window
                 if (chatWindow) {
-                    chatWindow.innerHTML = ""; // Clear previous messages if any
+                    chatWindow.innerHTML = "";
                     messages.forEach(msg => {
-                        // Avoid re-appending "Typing..." if it somehow got saved
                         if (!(msg.role === 'ai' && msg.content === 'Typing...')) {
                             appendMessage(msg.role, msg.content);
                         }
                     });
                 }
             } else {
-                messages = []; // Initialize if nothing in storage
+                messages = [];
             }
-
             if (data[STORAGE_KEY_SELECTED_MODEL] && selectedOption) {
                 selectedOption.textContent = data[STORAGE_KEY_SELECTED_MODEL];
             }
@@ -79,25 +77,23 @@ async function loadState() {
 
 // --- Reset Chat Function (No Confirmation) ---
 async function resetChat() {
-    messages = []; // Clear the in-memory messages
+    messages = [];
     if (chatWindow) {
-        chatWindow.innerHTML = ""; // Clear the chat display
+        chatWindow.innerHTML = "";
     }
-    chatContextAttemptedForThisSession = false; // Reset context attempt flag for the new "session"
-    
-    // Save the cleared state (empty messages array)
-    await saveState(); 
-    
+    chatContextAttemptedForThisSession = false;
+    sessionFetchedPageContext = null; // << NEW: Reset session context
+    await saveState();
     console.log("Chat has been reset immediately.");
-    // Optionally, inform the user in the chat window, though clearing it is usually enough
-    // appendMessage("ai", "Chat reset. How can I help you now?");
-    // messages.push({ role: "ai", content: "Chat reset. How can I help you now?" });
-    // await saveState(); // If you add an AI message, save it
 }
 
 
 // --- Initialization and Event Listeners ---
 document.addEventListener("DOMContentLoaded", async () => {
+    // Reset session-specific flags on popup load
+    chatContextAttemptedForThisSession = false;
+    sessionFetchedPageContext = null;
+
     // 1. Initialize custom dropdown
     if (customSelect && selectedOption && optionsContainer && options.length > 0) {
         selectedOption.addEventListener("click", () => {
@@ -108,7 +104,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 selectedOption.textContent = option.textContent;
                 customSelect.classList.remove("open");
                 console.log("Selected model:", option.textContent);
-                saveState(); // Save state when model changes
+                saveState();
             });
         });
         document.addEventListener("click", (e) => {
@@ -138,19 +134,18 @@ document.addEventListener("DOMContentLoaded", async () => {
                 chrome.runtime.openOptionsPage();
             } else {
                 console.error("chrome.runtime.openOptionsPage is not available.");
-                appendMessage("ai", "API Key is not set. Please configure it in the extension options."); // Not saved to messages array
+                appendMessage("ai", "API Key is not set. Please configure it in the extension options.");
             }
         } else {
             console.log("API Key loaded successfully.");
         }
     } catch (error) {
         console.error("Error loading API key:", error);
-        appendMessage("ai", "Error loading API key. Please check extension options or console."); // Not saved to messages array
+        appendMessage("ai", "Error loading API key. Please check extension options or console.");
     }
 
-
     // 3. Load saved state (chat messages, selected model)
-    await loadState();
+    await loadState(); // This also repopulates chatWindow
 
     // 4. Setup send button and input listeners
     if (sendBtn && userPrompt && chatWindow) {
@@ -160,12 +155,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             appendMessage("user", userMessageText);
             messages.push({ role: "user", content: userMessageText });
-            await saveState(); // Save state after adding user message
+            await saveState();
 
             userPrompt.value = "";
             userPrompt.disabled = true;
             sendBtn.disabled = true;
-            sendBtn.textContent = "Sending..."; // Or use an icon
+            sendBtn.textContent = "Sending...";
             await handleUserMessage(userMessageText);
         });
 
@@ -341,208 +336,164 @@ function appendMessage(role, content) {
 	chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
-async function handleUserMessage(userMessageText) { // userMessageText is already added to global `messages` array
+async function handleUserMessage(userMessageText) {
     if (!OPENROUTER_API_KEY) {
-      appendMessage("ai", "API key is not configured. Please set it in the extension options."); // Not saved
-      if (chrome.runtime.openOptionsPage) {
-        chrome.runtime.openOptionsPage();
-      }
-      // Enable inputs back
+      appendMessage("ai", "API key is not configured. Please set it in the extension options.");
+      if (chrome.runtime.openOptionsPage) chrome.runtime.openOptionsPage();
       if (userPrompt) userPrompt.disabled = false;
-      if (sendBtn) {
-          sendBtn.disabled = false;
-          sendBtn.textContent = "Send";
-      }
+      if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = "Send"; }
       return;
     }
 
-	const supportedPlatforms = [
-		"web.whatsapp.com",
-		"instagram.com",
-		"telegram.org",
-		"messenger.com",
-	];
+	const supportedPlatforms = ["web.whatsapp.com", "instagram.com", "telegram.org", "messenger.com"];
 	let currentUrl = "";
 	const selectedModelText = selectedOption?.textContent.trim();
-	const aiModel =
-		(selectedModelText === "Select AI model" || !selectedModelText) ? "google/gemini-2.0-flash-001" : selectedModelText;
+	const aiModel = (selectedModelText === "Select AI model" || !selectedModelText) ? "google/gemini-2.0-flash-001" : selectedModelText;
 
 	try {
 		currentUrl = await getCurrentTabUrl();
         console.log("[handleUserMessage] Current Tab URL:", currentUrl);
 	} catch (error) {
 		console.error("[handleUserMessage] Error getting current tab URL:", error.message);
-        const errorMessageContent = `Could not determine the current page URL: ${error.message}`;
-		appendMessage("ai", errorMessageContent);
-        // Optionally save this error to messages, though it's more of a transient UI issue
-        // messages.push({ role: "ai", content: errorMessageContent });
-        // await saveState();
+        appendMessage("ai", `Could not determine the current page URL: ${error.message}`);
         if (userPrompt) userPrompt.disabled = false;
-        if (sendBtn) {
-            sendBtn.disabled = false;
-            sendBtn.textContent = "Send";
-        }
+        if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = "Send"; }
 		return;
 	}
 
-	const isOnSupportedPlatform = supportedPlatforms.some((platform) =>
-		currentUrl.includes(platform)
-	);
+	const isOnSupportedPlatform = supportedPlatforms.some(platform => currentUrl.includes(platform));
     console.log("[handleUserMessage] Is on supported platform?", isOnSupportedPlatform);
 
-	let pageChatContextForAPI = null;
+    // Ensure a system prompt exists in `messages` (persisted history)
+    // This should be the *main* system prompt, not the page context.
+    if (messages.length === 0 || messages.find(m => m.role === "system" && (m.content.trim() === chatAnalyzerSystemPrompt.trim() || m.content.trim() === defaultSystemPrompt.trim())) === undefined) {
+        // If no system prompt, or the first message isn't THE system prompt, prepend one.
+        // Clear any other leading non-system messages if messages[0] is not the right system prompt.
+        messages = messages.filter(m => m.role === "user" || m.role === "ai" || (m.role === "system" && (m.content.trim() === chatAnalyzerSystemPrompt.trim() || m.content.trim() === defaultSystemPrompt.trim())));
 
-    if (messages.length === 0 || (messages.length > 0 && messages[0].role !== "system")) {
-        const systemPromptContent = isOnSupportedPlatform
-            ? chatAnalyzerSystemPrompt
-            : defaultSystemPrompt;
-        // messages.unshift({ role: "system", content: systemPromptContent });
-        console.log("[handleUserMessage] Added/Prepended system prompt:", isOnSupportedPlatform ? "Chat Analyzer Mode" : "Default AI Assistant Mode");
-        await saveState();
+        const systemPromptContent = isOnSupportedPlatform ? chatAnalyzerSystemPrompt : defaultSystemPrompt;
+        messages.unshift({ role: "system", content: systemPromptContent });
+        console.log("[handleUserMessage] Ensured/Prepended main system prompt:", isOnSupportedPlatform ? "Chat Analyzer Mode" : "Default AI Assistant Mode");
+        await saveState(); // Save if we modified messages
     }
 
 
 	if (isOnSupportedPlatform && !chatContextAttemptedForThisSession) {
 		appendMessage("ai", "Accessing chat messages from the current page...");
         let typingBubbleForContext = chatWindow.querySelector(".chat-bubble.ai.typing-indicator");
-
         console.log("[handleUserMessage] Attempting to fetch chat messages for supported platform.");
 		try {
 			const chatMessagesFromPage = await getChatMessagesFromContentScript();
-            console.log("[handleUserMessage] Fetched chatMessagesFromPage:", chatMessagesFromPage);
+            if (typingBubbleForContext) typingBubbleForContext.parentElement.remove(); // Remove "Accessing..." typing indicator
 
 			if (chatMessagesFromPage && chatMessagesFromPage.length > 0) {
 				const formattedChat = formatChatForAI(chatMessagesFromPage);
-                console.log("[handleUserMessage] Formatted chat for API:", formattedChat ? formattedChat.substring(0, 200) + "..." : "null/empty");
-				pageChatContextForAPI = {
+                // Store in session-specific variable, not in persisted `messages`
+				sessionFetchedPageContext = {
 					role: "system",
 					content: `Here is the chat history from the current page (${currentUrl}). Please analyze it based on my previous instructions:\n${formattedChat}`,
 				};
-
-                if (typingBubbleForContext) {
-                    typingBubbleForContext.parentElement.remove();
-                }
                 const contextLoadedMsg = "I've loaded the chat from the current page to provide context for my responses.";
 				appendMessage("ai", contextLoadedMsg);
-                messages.push({role: "ai", content: contextLoadedMsg});
+                messages.push({role: "ai", content: contextLoadedMsg}); // This notification IS saved
                 await saveState();
-                console.log("[handleUserMessage] pageChatContextForAPI successfully created.");
+                console.log("[handleUserMessage] sessionFetchedPageContext successfully created.");
 			} else {
-                if (typingBubbleForContext) {
-                    typingBubbleForContext.parentElement.remove();
-                }
-                console.warn("[handleUserMessage] No chat messages found on page or content script returned empty/invalid.");
+                sessionFetchedPageContext = null; // Explicitly nullify if no context found
                 const noContextMsg = "No chat messages found on the page, or I couldn't access them. You can continue the conversation without this context.";
 				appendMessage("ai", noContextMsg);
-                messages.push({role: "ai", content: noContextMsg});
+                messages.push({role: "ai", content: noContextMsg}); // Save notification
                 await saveState();
 			}
 		} catch (error) {
-            if (typingBubbleForContext) {
-                typingBubbleForContext.parentElement.remove();
-            }
+            if (typingBubbleForContext) typingBubbleForContext.parentElement.remove();
+            sessionFetchedPageContext = null; // Explicitly nullify on error
 			console.error("[handleUserMessage] Error processing chat messages from page:", error.message);
             const contextErrorMsg = `I encountered an issue trying to retrieve chat messages: ${error.message}. You can still chat, but without page context.`;
 			appendMessage("ai", contextErrorMsg);
-            messages.push({role: "ai", content: contextErrorMsg});
+            messages.push({role: "ai", content: contextErrorMsg}); // Save notification
             await saveState();
 		} finally {
 			chatContextAttemptedForThisSession = true;
             console.log("[handleUserMessage] chatContextAttemptedForThisSession set to true.");
 		}
-	} else if (
-		!isOnSupportedPlatform &&
-		!chatContextAttemptedForThisSession &&
-		messages.filter(m => m.role === 'user').length <= 1 && // Check if it's one of the first user messages
-		userMessageText.toLowerCase().match(/chat|messages|conversation|analyze this/)
-	) {
+	} else if (!isOnSupportedPlatform && !chatContextAttemptedForThisSession && messages.filter(m => m.role === 'user').length <= 1 && userMessageText.toLowerCase().match(/chat|messages|conversation|analyze this/)) {
         const platformWarningMsg = "I can only access and analyze chat messages on WhatsApp, Instagram, Telegram, or Messenger. Please navigate to one of these platforms if you want me to analyze a chat.";
 		appendMessage("ai", platformWarningMsg);
-        messages.push({role: "ai", content: platformWarningMsg});
+        messages.push({role: "ai", content: platformWarningMsg}); // Save notification
         await saveState();
-		chatContextAttemptedForThisSession = true;
+		chatContextAttemptedForThisSession = true; // Mark as attempted to avoid repeated warnings
 	}
 
 	appendMessage("ai", "Typing...");
 	let typingBubble = chatWindow.querySelector(".chat-bubble.ai.typing-indicator");
 
-	let apiMessagesToSend = [...messages];
-	if (pageChatContextForAPI) {
-        const systemPromptIndex = apiMessagesToSend.findIndex(msg => msg.role === "system");
-        if (systemPromptIndex !== -1 && (apiMessagesToSend.length === 1 || (apiMessagesToSend.length > 1 && apiMessagesToSend[1].role !== "system"))) {
-             apiMessagesToSend.splice(systemPromptIndex + 1, 0, pageChatContextForAPI);
-        } else if (systemPromptIndex === -1) {
-            apiMessagesToSend.unshift(pageChatContextForAPI);
-        }
-        console.log("[handleUserMessage] Adding pageChatContextForAPI to apiMessagesToSend.");
-	} else {
-        console.log("[handleUserMessage] pageChatContextForAPI is null, not adding to API request.");
+    // --- Construct messages for API ---
+	let apiMessagesToSend = [];
+
+    // 1. Get the main system prompt from `messages` (persisted history)
+    const mainSystemPromptInMessages = messages.find(msg =>
+        msg.role === "system" &&
+        (msg.content.trim() === chatAnalyzerSystemPrompt.trim() || msg.content.trim() === defaultSystemPrompt.trim())
+    );
+
+    if (mainSystemPromptInMessages) {
+        apiMessagesToSend.push(mainSystemPromptInMessages);
+    } else {
+        // Fallback if somehow main system prompt isn't in messages (should be handled by logic above)
+        console.warn("[handleUserMessage] Main system prompt unexpectedly not found in messages array. Re-creating for API call.");
+        const systemPromptContent = isOnSupportedPlatform ? chatAnalyzerSystemPrompt : defaultSystemPrompt;
+        apiMessagesToSend.push({ role: "system", content: systemPromptContent });
     }
+
+    // 2. Add the session-specific page context, if it was fetched and exists
+    if (sessionFetchedPageContext) {
+        apiMessagesToSend.push(sessionFetchedPageContext);
+        console.log("[handleUserMessage] Including sessionFetchedPageContext in API request.");
+    } else {
+        console.log("[handleUserMessage] No sessionFetchedPageContext to include in API request.");
+    }
+
+    // 3. Add all other messages (user messages, AI responses, AI notifications like "I've loaded...")
+    //    from the global `messages` array, ensuring not to re-add the main system prompt.
+    messages.forEach(msg => {
+        if (msg !== mainSystemPromptInMessages) { // Only add if it's not the main system prompt already added
+            apiMessagesToSend.push(msg);
+        }
+    });
+    // --- End Construct messages for API ---
+
 
 	console.log("[handleUserMessage] Final messages being sent to API:", JSON.stringify(apiMessagesToSend.map(m=>({role: m.role, content: m.content.substring(0,100) + (m.content.length > 100 ? "..." : "")})), null, 2));
 
 	try {
 		const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
 			method: "POST",
-			headers: {
-				"Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-				"Content-Type": "application/json",
-			},
-			body: JSON.stringify({
-				model: aiModel,
-				max_tokens: 1000,
-				temperature: 0.7,
-				messages: apiMessagesToSend,
-			}),
+			headers: { "Authorization": `Bearer ${OPENROUTER_API_KEY}`, "Content-Type": "application/json" },
+			body: JSON.stringify({ model: aiModel, max_tokens: 1000, temperature: 0.7, messages: apiMessagesToSend }),
 		});
 
 		if (!res.ok) {
 			const errorData = await res.json().catch(() => ({ error: { message: "Unknown API error, response not JSON." } }));
-			const statusText = res.statusText || "Failed to fetch";
-			const errorMessage =
-				errorData.error?.message ||
-				`API request failed with status ${res.status}: ${statusText}`;
-			throw new Error(errorMessage);
+			throw new Error(errorData.error?.message || `API request failed with status ${res.status}: ${res.statusText}`);
 		}
 
 		const data = await res.json();
-		const aiResponse =
-			data.choices[0]?.message?.content.trim() ||
-			"No response received from AI, or the response was empty.";
+		const aiResponse = data.choices[0]?.message?.content.trim() || "No response received from AI, or the response was empty.";
 
-		if (typingBubble) {
-            const bubbleParent = typingBubble.parentElement;
-            bubbleParent.remove();
-            appendMessage("ai", aiResponse);
-		} else {
-			appendMessage("ai", aiResponse);
-		}
-		messages.push({ role: "ai", content: aiResponse });
+		if (typingBubble) typingBubble.parentElement.remove();
+		appendMessage("ai", aiResponse);
+		messages.push({ role: "ai", content: aiResponse }); // This is an AI response, save it
         await saveState();
 
 	} catch (err) {
 		console.error("[handleUserMessage] Error fetching AI response:", err.message, err.stack);
-		const errorMessageText =
-			err.message ||
-			"Error: Unable to fetch response. Please check your connection or API key.";
-		if (typingBubble) {
-            const bubbleParent = typingBubble.parentElement;
-            bubbleParent.remove();
-            appendMessage("ai", `Error: ${errorMessageText}`);
-		} else {
-			appendMessage("ai", `Error: ${errorMessageText}`);
-		}
-        // Optionally, add error to messages array for persistence. If so, use "ai" role.
-        // messages.push({ role: "ai", content: `Error: ${errorMessageText}` });
-        // await saveState();
+		if (typingBubble) typingBubble.parentElement.remove();
+		appendMessage("ai", `Error: ${err.message || "Unable to fetch response."}`);
+        // Do not save API errors to the main chat history by default
 	} finally {
-		if (chatWindow) {
-			chatWindow.scrollTop = chatWindow.scrollHeight;
-		}
+		if (chatWindow) chatWindow.scrollTop = chatWindow.scrollHeight;
         if (userPrompt) userPrompt.disabled = false;
-        if (sendBtn) {
-            sendBtn.disabled = false;
-            sendBtn.textContent = "Send";
-        }
+        if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = "Send"; }
 	}
 }
