@@ -1,6 +1,5 @@
 # InChatSight: AI-Powered Chat Companion
-
-#### Video Demo: <>
+#### Video Demo: <https://youtu.be/PJlKW4gZVIk>
 #### Description:
 
 InChatSight is a Chrome browser extension designed to enhance your online chat experiences by integrating an intelligent AI assistant. Currently, it excels at interacting with WhatsApp Web, where it can access the current conversation (with user initiation via the popup) to provide valuable insights, summaries, emotional tone analysis, or even strategic communication advice. Support for other popular platforms like Facebook Messenger, Instagram, and Telegram is planned for future development. The extension allows users to interact with a powerful AI model (configurable via OpenRouter API) that uses the context of the ongoing chat to offer relevant and helpful responses. Even when not on a supported chat platform, or when full context-extraction for other platforms is pending, InChatSight functions as a general-purpose AI chatbot within its popup interface, remembering your conversation history across sessions. The goal is to provide users with a "second brain" or an insightful friend who can offer a different perspective on their digital interactions, helping them communicate more effectively and understand conversations better.
