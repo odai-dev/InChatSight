@@ -2,7 +2,7 @@
     "manifest_version": 3,
     "name": "InChatSight — AI-Powered Chat Companion",
     "version": "1.0",
-    "description": "Injects an AI chatbot into web chat platforms to provide isnights on your converstion.",
+    "description": "AI assistant that analyzes web chats and gives real-time insights, tone analysis, and smart summaries.",
     "permissions": ["activeTab", "scripting", "storage", "tabs"],
     "host_permissions": [
          "*://*.whatsapp.com/*",
